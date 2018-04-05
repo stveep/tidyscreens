@@ -1,0 +1,13 @@
+Package: tidyscreens
+Title: Functions for tidy screen analysis - reading and annotating plate data
+Version: 0.0.0.9000
+Authors@R: person("Steve", "Pettitt", email = "spettitt@icr.ac.uk", role = c("aut", "cre"))
+Description: Functions for producing annotation data frames from simple well maps. Also contains a function to read data from multiple files and combine into a single tibble.
+Depends: R (>= 3.4.2)
+Imports:
+	dplyr (>= 0.7.4),
+	readxl (>= 1.0.0),
+	readr (>= 1.1.1)
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1.9000
