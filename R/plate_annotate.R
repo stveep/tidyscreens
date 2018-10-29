@@ -86,8 +86,17 @@ annotate_plate <- function(df,type=96,plate=1,area=2,condition=3,value=4) {
 # For stuff replicated across plates, can use this with by functions	
 # DF provided needs Plate, Area, Condition, Value columns with indexes as in default args
 
+  # In case of tibble etc. being passed
+  df <- data.frame(df)
+
+  # Convert possible factors to character vectors (so they can be extended as needed) and replace NAs with empty strings for consistency.
+  df[,area] <- as.character(df[,area])
+  df[,area] <- replace(df[,area], is.na(df[,area]), "")
+  df[,plate] <- as.character(df[,plate])
+  df[,plate] <- replace(df[,plate], is.na(df[,plate]), "")
+
+
 	# set up the plate types 
-	nplates = length(unique(df[,plate]))
 	if (type == 96) {
 		fullplate = "A1-H12"
 	} else {
@@ -101,11 +110,19 @@ annotate_plate <- function(df,type=96,plate=1,area=2,condition=3,value=4) {
 	df[df[,area] == "",area] <- fullplate
 
 	# If Plates field is empty, apply to all plates
-	plate_empty <- df[is.na(df[,plate]),]
+
+  # Case where no plate is specified for any condition:
+  if(all(df[,plate] == "") | all(is.na(df[,plate]))) {
+    df[,plate] <- "Unnamed Plate"
+  }
+
+  # If Plates speficied for some conditions but not others...
+  # First get annotation rows where the plate is not specified:
+	plate_empty <- df[df[,plate] == "",]
 
 	if (nrow(plate_empty) != 0) {
 	# Remove old empty plate rows
-		df <- df[!is.na(df[,plate]),]
+		df <- df[df[,plate] != "",]
 
 	# Makes a list of duplicate data frames, one for each plate
 		new_rows <- lapply(unique(df[,plate]), function(x,pe) { temp = pe; temp$Plate = x; temp },pe=plate_empty)
@@ -115,12 +132,11 @@ annotate_plate <- function(df,type=96,plate=1,area=2,condition=3,value=4) {
 		df <- do.call(rbind,new_rows)
 
 	}
-	# Remove any lines where the condition or value is NA	
 
 	# Set up the plates data frame	
 	lst = list()
 	for (i in unique(df[,plate])) {
-		lst[[i]] = wells
+		lst[[i]] <- wells
 		lst[[i]][,"Plate"] <- i	
 	}
 	plates <- do.call(rbind, lst)
@@ -132,8 +148,6 @@ annotate_plate <- function(df,type=96,plate=1,area=2,condition=3,value=4) {
 		anno <- df[df[,condition] == i,]
 		# Expand well ranges
 		anno <- apply(anno,1,function(x) {dft <- condition_wells(x[area],x[condition],x[value]); dft$Plate = x[plate]; dft})
-	#	anno$plates <- plates
-	#	annolist[[i]] <- Reduce(function(x,y) merge(x,y,by=c("Plate","Row","Column"),all=T), anno)
 		tempplates <- plates
 		for (j in anno) {
 			tempplates <- merge(tempplates,j,all=T)
